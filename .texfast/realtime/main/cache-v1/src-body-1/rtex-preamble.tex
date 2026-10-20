@@ -1,0 +1,125 @@
+% !TEX program = lualatex
+
+\documentclass[a4paper,12pt]{article}
+\usepackage{fancyhdr}
+\usepackage[top=0.7in,bottom=0.6in,left=0.3in,right=0.3in,headheight=15pt]{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+% \usepackage{appendix}
+\hypersetup{
+    hidelinks
+}
+\tracinglostchars=1
+\usepackage{setspace}
+\usepackage{array}
+\usepackage{gensymb}
+\usepackage{pgfplots}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usepackage{circuitikz}
+\usepackage{textcomp}
+\usepackage{luatexja-fontspec}
+\usepackage{xcolor}
+\usepackage{bookmark}
+\usepackage{amsmath,amssymb,amsfonts, mathrsfs}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\newcolumntype{M}[1]{>{\centering\arraybackslash\(}p{#1}<{\)}}  % math-mode paragraph column for longtable (\( expands to $, but keeps VS Code highlighting sane)
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}     % ragged-right paragraph column for longtable
+\usepackage{babel}
+\hbadness=10000
+\definecolor{wave_dark}{RGB}{35, 110, 190}
+\definecolor{wave_med}{RGB}{95, 155, 220}
+\definecolor{wave_light}{RGB}{200, 225, 255}
+\definecolor{raycolor}{RGB}{215, 45, 130} % Distinct magenta/pink for rays
+\definecolor{dotcolor}{RGB}{0, 115, 230}  % Vivid blue for object/image points
+\definecolor{rayred}{RGB}{220, 50, 50}     % Red for ray vectors
+\definecolor{wfblack}{RGB}{30, 30, 30}     % Dark charcoal for incident wavefronts
+\definecolor{wfblue}{RGB}{0, 100, 220}     % Royal blue for reflected wavefronts
+\definecolor{wfgreen}{RGB}{30, 150, 60}    % Forest green for refracted wavefronts
+\setmainjfont{FandolSong-Regular.otf}[
+    BoldFont = FandolHei-Regular.otf,
+    ItalicFont = FandolKai-Regular.otf,
+    BoldItalicFont = FandolHei-Regular.otf
+]
+\setsansjfont{FandolHei-Regular.otf}
+\ctikzset{bipoles/galvanometer/height/.initial=.60}
+\ctikzset{bipoles/galvanometer/width/.initial=.60}
+
+\ctikzset{bipoles/galvanometer/arrow rotate/.initial=0,% <=new key
+rotation/.style={bipoles/galvanometer/arrow rotate=#1},% style for ease introduction in code
+}
+% Command to draw the B-field (into page) marker (an X inside a circle)
+\newcommand{\BInto}[1]{
+  \draw[bfieldgreen, thick] (#1) circle (0.16cm);
+  \draw[bfieldgreen, thin] (#1) ++(-0.09cm, -0.09cm) -- ++(0.18cm, 0.18cm);
+  \draw[bfieldgreen, thin] (#1) ++(-0.09cm, 0.09cm) -- ++(0.18cm, -0.18cm);
+}
+\makeatletter
+\pgfcircdeclarebipole{}{\ctikzvalof{bipoles/galvanometer/height}}{galvanometer}{\ctikzvalof{bipoles/galvanometer/height}}{\ctikzvalof{bipoles/galvanometer/width}}{
+    \def\pgf@circ@temp{right}
+    \ifx\tikz@res@label@pos\pgf@circ@temp
+        \pgf@circ@res@step=-1.2\pgf@circ@res@up
+    \else
+        \def\pgf@circ@temp{below}
+        \ifx\tikz@res@label@pos\pgf@circ@temp
+            \pgf@circ@res@step=-1.2\pgf@circ@res@up
+        \else
+            \pgf@circ@res@step=1.2\pgf@circ@res@up
+        \fi
+    \fi
+
+    \pgfpathmoveto{\pgfpoint{\pgf@circ@res@left}{\pgf@circ@res@zero}}       
+    \pgfpointorigin \pgf@circ@res@other =  \pgf@x  \advance \pgf@circ@res@other by -\pgf@circ@res@up
+    \pgfpathlineto{\pgfpoint{\pgf@circ@res@other}{\pgf@circ@res@zero}}
+    \pgfusepath{draw}
+
+    \pgfsetlinewidth{\pgfkeysvalueof{/tikz/circuitikz/bipoles/thickness}\pgfstartlinewidth}
+
+        \pgfscope
+            \pgfpathcircle{\pgfpointorigin}{1.0\pgf@circ@res@up}
+            \pgfusepath{draw}       
+        \endpgfscope    
+
+    \pgftransformrotate{\ctikzvalof{bipoles/galvanometer/arrow rotate}}% <= magic line
+    \pgfsetlinewidth{\pgfstartlinewidth}
+
+    \pgfsetarrowsend{latex}
+    \pgfpathmoveto{\pgfpoint{0.7\pgf@circ@res@up}{\pgf@circ@res@zero}}
+    \pgfpathlineto{\pgfpoint{0.7\pgf@circ@res@down}{\pgf@circ@res@zero}}
+    \pgfusepath{draw}
+    \pgfsetarrowsend{}
+}
+\def\pgf@circ@galvanometer@path#1{\pgf@circ@bipole@path{galvanometer}{#1}}
+\compattikzset{galvanometer/.style = {\circuitikzbasekey, /tikz/to path=\pgf@circ@galvanometer@path}}
+
+\ctikzset{european}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}  % ragged right inside X
+\makeatletter
+\renewcommand*\env@matrix[1][*\c@MaxMatrixCols c]{%
+  \hskip -\arraycolsep
+  \let\@ifnextchar\new@ifnextchar
+  \array{#1}}
+\makeatother
+\pgfplotsset{width=10cm, compat=1.18}
+\usetikzlibrary{datavisualization,shapes.arrows}
+\usetikzlibrary{patterns,calc, positioning,arrows.meta, angles, quotes,math, 3d, shapes.misc}
+\usetikzlibrary{datavisualization.formats.functions,shadings}
+\usetikzlibrary{shapes.symbols,arrows.meta,decorations.pathmorphing,decorations.markings,babel,shapes.geometric,backgrounds,shadows}
+\singlespacing
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\leftmark}
+% \renewcommand{\arraystretch}{2}
+\renewcommand{\footrulewidth}{0.6pt}
+\rfoot{\thepage}
+\lfoot{\rightmark}
+\newcommand{\unnumberedsection}[1]{%
+  \section*{#1}%
+  \phantomsection
+  \addcontentsline{toc}{section}{#1}%
+  \markboth{\MakeUppercase{#1}}{}%
+}
+\title{\textbf{IB Physics HL Notes}}
+\author{Kenny Lin / BusyPizza}
